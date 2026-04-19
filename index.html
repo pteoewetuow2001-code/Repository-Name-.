@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+<meta charset="UTF-8">
+<title>شات من 34</title>
+
+<style>
+body{
+margin:0;
+font-family:Arial;
+background:#0b1220;
+color:white;
+direction:rtl;
+}
+
+.hidden{display:none;}
+
+input,button,select{
+padding:10px;
+margin:5px;
+border:none;
+border-radius:8px;
+}
+
+button{
+background:#22c55e;
+color:white;
+cursor:pointer;
+}
+
+/* LOGIN */
+.center{
+height:100vh;
+display:flex;
+flex-direction:column;
+justify-content:center;
+align-items:center;
+}
+
+/* TOP */
+.topbar{
+display:flex;
+justify-content:space-between;
+background:#1e293b;
+padding:10px;
+}
+
+/* LAYOUT */
+.container{
+display:flex;
+height:calc(100vh - 50px);
+}
+
+.sidebar{
+width:260px;
+background:#111827;
+padding:10px;
+overflow:auto;
+}
+
+.room{
+padding:10px;
+margin:5px 0;
+background:#334155;
+border-radius:8px;
+text-align:center;
+cursor:pointer;
+}
+
+/* CHAT */
+.chat{
+flex:1;
+display:flex;
+flex-direction:column;
+}
+
+.box{
+flex:1;
+overflow:auto;
+padding:10px;
+}
+
+.msg{
+background:#1e40af;
+padding:8px;
+margin:5px;
+border-radius:8px;
+}
+
+/* FRIENDS */
+.friend{
+background:#0f172a;
+padding:8px;
+margin:5px 0;
+border-radius:8px;
+}
+
+/* PROFILE */
+.profile{
+background:#0f172a;
+padding:10px;
+border-radius:10px;
+text-align:center;
+margin-bottom:10px;
+}
+
+.profile img{
+width:80px;
+height:80px;
+border-radius:50%;
+object-fit:cover;
+border:2px solid #22c55e;
+}
+
+.small{color:#94a3b8;font-size:13px;}
+
+.footer{
+display:flex;
+padding:10px;
+background:#1e293b;
+}
+</style>
+</head>
+
+<body>
+
+<!-- LOGIN -->
+<div id="auth" class="center">
+<h2>شات من 34</h2>
+
+<input id="avatar" placeholder="رابط صورة البروفايل">
+
+<input id="username" placeholder="اسم المستخدم">
+<input id="email" placeholder="البريد الإلكتروني">
+<input id="phone" placeholder="رقم الهاتف">
+<input id="pass" type="password" placeholder="كلمة المرور">
+
+<select id="gender">
+<option>ذكر</option>
+<option>أنثى</option>
+</select>
+
+<select id="status">
+<option>أعزب</option>
+<option>مرتبط</option>
+<option>متزوج</option>
+</select>
+
+<button onclick="register()">إنشاء حساب</button>
+<button onclick="login()">دخول</button>
+</div>
+
+<!-- APP -->
+<div id="app" class="hidden">
+
+<div class="topbar">
+<div>👤 <span id="name"></span> | 💰 <span id="coins">0</span></div>
+<button onclick="logout()">خروج</button>
+</div>
+
+<div class="container">
+
+<!-- SIDEBAR -->
+<div class="sidebar">
+
+<!-- PROFILE -->
+<div class="profile">
+<img id="pimg">
+<div id="pname"></div>
+<div class="small" id="pinfo"></div>
+</div>
+
+<h4>📌 غرف</h4>
+<div class="room" onclick="openRoom('عام')">عام</div>
+<div class="room" onclick="openRoom('ألعاب')">ألعاب</div>
+<div class="room" onclick="openRoom('دردشة')">دردشة</div>
+
+<hr>
+
+<h4>👥 أصدقاء</h4>
+<input id="friendName" placeholder="اسم المستخدم">
+<button onclick="addFriend()">إضافة</button>
+
+<div id="friendsList"></div>
+
+<hr>
+
+<h4>💸 تحويل</h4>
+<input id="toUser" placeholder="المستخدم">
+<input id="amount" placeholder="المبلغ">
+<button onclick="sendCoins()">إرسال</button>
+
+</div>
+
+<!-- CHAT -->
+<div class="chat">
+
+<div class="box" id="box"></div>
+
+<div class="footer">
+<input id="msg" placeholder="اكتب رسالة...">
+<button onclick="sendMsg()">إرسال</button>
+<button onclick="giveCoin()">+1💰</button>
+</div>
+
+</div>
+
+</div>
+
+</div>
+
+<script>
+
+let currentUser="";
+let currentRoom="عام";
+
+/* USERS */
+function getUsers(){
+return JSON.parse(localStorage.getItem("users")||"{}");
+}
+
+function saveUsers(d){
+localStorage.setItem("users",JSON.stringify(d));
+}
+
+/* REGISTER */
+function register(){
+let avatar=document.getElementById("avatar").value;
+let username=document.getElementById("username").value;
+let email=document.getElementById("email").value;
+let phone=document.getElementById("phone").value;
+let pass=document.getElementById("pass").value;
+let gender=document.getElementById("gender").value;
+let status=document.getElementById("status").value;
+
+if(!username||!email||!phone||!pass)return;
+
+let data=getUsers();
+
+/* منع تكرار الاسم */
+for(let k in data){
+if(data[k].username===username){
+return alert("اسم مستخدم موجود");
+}
+}
+
+let user={
+avatar:avatar||"https://i.imgur.com/0y0y0y0.png",
+username,email,phone,pass,
+gender,status,
+coins:10,
+friends:[]
+};
+
+data[email]=user;
+data[phone]=user;
+
+saveUsers(data);
+
+alert("تم إنشاء الحساب");
+}
+
+/* LOGIN */
+function login(){
+let email=document.getElementById("email").value;
+let phone=document.getElementById("phone").value;
+let pass=document.getElementById("pass").value;
+
+let data=getUsers();
+
+let user=data[email]||data[phone];
+
+if(!user||user.pass!==pass){
+return alert("خطأ في البيانات");
+}
+
+currentUser=user.email;
+
+document.getElementById("auth").classList.add("hidden");
+document.getElementById("app").classList.remove("hidden");
+
+updateUI();
+loadChat();
+loadFriends();
+loadProfile();
+}
+
+/* PROFILE */
+function loadProfile(){
+let u=getUsers()[currentUser];
+
+document.getElementById("pimg").src=u.avatar;
+document.getElementById("pname").innerText=u.username;
+
+document.getElementById("pinfo").innerText=
+"📧 "+u.email+
+"\n📱 "+u.phone+
+"\n👤 "+u.gender+
+"\n💍 "+u.status;
+}
+
+/* UI */
+function updateUI(){
+let u=getUsers()[currentUser];
+
+document.getElementById("name").innerText=u.username;
+document.getElementById("coins").innerText=u.coins;
+}
+
+function logout(){location.reload();}
+
+/* ROOMS */
+function openRoom(r){
+currentRoom=r;
+loadChat();
+}
+
+/* CHAT */
+function getChat(){
+return JSON.parse(localStorage.getItem("chat_"+currentRoom)||"[]");
+}
+
+function saveChat(d){
+localStorage.setItem("chat_"+currentRoom,JSON.stringify(d));
+}
+
+function sendMsg(){
+let msg=document.getElementById("msg").value;
+if(!msg)return;
+
+let u=getUsers()[currentUser];
+
+let chat=getChat();
+chat.push({
+user:u.username,
+msg
+});
+
+saveChat(chat);
+
+document.getElementById("msg").value="";
+loadChat();
+}
+
+function loadChat(){
+let box=document.getElementById("box");
+box.innerHTML="";
+
+getChat().forEach(m=>{
+let div=document.createElement("div");
+div.className="msg";
+div.innerText=m.user+": "+m.msg;
+box.appendChild(div);
+});
+}
+
+/* COINS */
+function giveCoin(){
+let d=getUsers();
+d[currentUser].coins++;
+saveUsers(d);
+updateUI();
+}
+
+/* TRANSFER */
+function sendCoins(){
+let to=document.getElementById("toUser").value;
+let amount=parseInt(document.getElementById("amount").value);
+
+let d=getUsers();
+
+if(!d[to]||!amount)return;
+
+if(d[currentUser].coins<amount){
+return alert("رصيدك لا يكفي");
+}
+
+d[currentUser].coins-=amount;
+d[to].coins+=amount;
+
+saveUsers(d);
+updateUI();
+}
+
+/* FRIENDS */
+function addFriend(){
+let name=document.getElementById("friendName").value;
+
+let d=getUsers();
+
+if(!d[name])return alert("غير موجود");
+
+if(!d[currentUser].friends.includes(name)){
+d[currentUser].friends.push(name);
+saveUsers(d);
+loadFriends();
+}
+}
+
+function removeFriend(name){
+let d=getUsers();
+
+d[currentUser].friends=
+d[currentUser].friends.filter(f=>f!==name);
+
+saveUsers(d);
+loadFriends();
+}
+
+function loadFriends(){
+let list=document.getElementById("friendsList");
+list.innerHTML="";
+
+let d=getUsers();
+
+(d[currentUser].friends||[]).forEach(f=>{
+let div=document.createElement("div");
+div.className="friend";
+
+div.innerHTML=`
+<b>${f}</b><br>
+<button onclick="removeFriend('${f}')">➖ حذف</button>
+`;
+
+list.appendChild(div);
+});
+}
+
+</script>
+
+</body>
+</html>
